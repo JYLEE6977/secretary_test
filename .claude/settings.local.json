@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv 보고서_최종_진짜최종.txt 보고서_초안.txt 보고서_수정.txt 보고서_최종.txt 영수증_정리.txt temp.csv ../보고서/)",
+      "Bash(mv 기획_메모.txt 아이디어_메모_0301.txt 피드백.txt 메모.txt 무제.txt 나중에정리.txt 링크모음.txt ../메모/)",
+      "Bash(mv 할일.txt 회의실.txt ../업무/)",
+      "WebFetch(domain:www.subtrac.kr)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__browser_batch",
+      "WebSearch"
+    ]
+  }
+}

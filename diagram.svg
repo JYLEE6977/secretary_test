@@ -1,0 +1,100 @@
+<svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" width="800" height="200">
+  <defs>
+    <!-- 화살표 마커 -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#6b7280"/>
+    </marker>
+
+    <!-- 그림자 -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-opacity="0.2"/>
+    </filter>
+
+    <!-- 호버 효과용 스타일 -->
+    <style>
+      .stage-box {
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      .stage-box:hover {
+        filter: brightness(1.1) drop-shadow(0 6px 12px rgba(0,0,0,0.3));
+        transform: translateY(-3px);
+      }
+      .stage-text {
+        font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+        font-weight: 700;
+        text-anchor: middle;
+        dominant-baseline: middle;
+      }
+      .stage-label {
+        font-size: 13px;
+        fill: white;
+      }
+      .arrow-line {
+        stroke: #d1d5db;
+        stroke-width: 2;
+        fill: none;
+        stroke-linecap: round;
+      }
+    </style>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="800" height="200" fill="none"/>
+
+  <!-- 화살표 라인 1 (기획 → 제작) -->
+  <line x1="140" y1="100" x2="200" y2="100" class="arrow-line" marker-end="url(#arrowhead)"/>
+
+  <!-- 화살표 라인 2 (제작 → 검토) -->
+  <line x1="340" y1="100" x2="400" y2="100" class="arrow-line" marker-end="url(#arrowhead)"/>
+
+  <!-- 화살표 라인 3 (검토 → 배포) -->
+  <line x1="540" y1="100" x2="600" y2="100" class="arrow-line" marker-end="url(#arrowhead)"/>
+
+  <!-- 화살표 라인 4 (배포 → 분석) -->
+  <line x1="740" y1="100" x2="800" y2="100" class="arrow-line" marker-end="url(#arrowhead)"/>
+
+  <!-- 단계 1: 기획 -->
+  <g filter="url(#shadow)">
+    <rect x="20" y="50" width="120" height="100" rx="12" ry="12" fill="#a78bfa" class="stage-box"/>
+    <text x="80" y="100" class="stage-text stage-label">기획</text>
+    <text x="80" y="120" style="font-size: 11px; fill: rgba(255,255,255,0.8); text-anchor: middle;">Planning</text>
+  </g>
+
+  <!-- 단계 2: 제작 -->
+  <g filter="url(#shadow)">
+    <rect x="220" y="50" width="120" height="100" rx="12" ry="12" fill="#60a5fa" class="stage-box"/>
+    <text x="280" y="100" class="stage-text stage-label">제작</text>
+    <text x="280" y="120" style="font-size: 11px; fill: rgba(255,255,255,0.8); text-anchor: middle;">Production</text>
+  </g>
+
+  <!-- 단계 3: 검토 -->
+  <g filter="url(#shadow)">
+    <rect x="420" y="50" width="120" height="100" rx="12" ry="12" fill="#f59e0b" class="stage-box"/>
+    <text x="480" y="100" class="stage-text stage-label">검토</text>
+    <text x="480" y="120" style="font-size: 11px; fill: rgba(255,255,255,0.8); text-anchor: middle;">Review</text>
+  </g>
+
+  <!-- 단계 4: 배포 -->
+  <g filter="url(#shadow)">
+    <rect x="620" y="50" width="120" height="100" rx="12" ry="12" fill="#4ade80" class="stage-box"/>
+    <text x="680" y="100" class="stage-text stage-label">배포</text>
+    <text x="680" y="120" style="font-size: 11px; fill: rgba(255,255,255,0.8); text-anchor: middle;">Deploy</text>
+  </g>
+
+  <!-- 프로세스 번호 표시 (옵션) -->
+  <circle cx="50" cy="35" r="14" fill="#a78bfa" opacity="0.3"/>
+  <text x="50" y="40" style="font-size: 12px; font-weight: 700; fill: #a78bfa; text-anchor: middle;">01</text>
+
+  <circle cx="250" cy="35" r="14" fill="#60a5fa" opacity="0.3"/>
+  <text x="250" y="40" style="font-size: 12px; font-weight: 700; fill: #60a5fa; text-anchor: middle;">02</text>
+
+  <circle cx="450" cy="35" r="14" fill="#f59e0b" opacity="0.3"/>
+  <text x="450" y="40" style="font-size: 12px; font-weight: 700; fill: #f59e0b; text-anchor: middle;">03</text>
+
+  <circle cx="650" cy="35" r="14" fill="#4ade80" opacity="0.3"/>
+  <text x="650" y="40" style="font-size: 12px; font-weight: 700; fill: #4ade80; text-anchor: middle;">04</text>
+
+  <!-- 추가 폭 확장용 (분석 다이어그램으로 전환 가능) -->
+  <!-- 분석은 다음 라인으로 분리 가능 -->
+</svg>

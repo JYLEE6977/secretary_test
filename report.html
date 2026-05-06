@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SubTrackr 사이트 분석 보고서</title>
+  <style>
+    :root {
+      --transition: 0.35s cubic-bezier(.4,0,.2,1);
+    }
+
+    [data-theme="dark"] {
+      --bg-base:        #0f0f23;
+      --orb1:           rgba(99,  60, 255, 0.35);
+      --orb2:           rgba(0,  180, 255, 0.25);
+      --orb3:           rgba(244, 114, 182, 0.20);
+
+      --glass-bg:       rgba(255,255,255,0.05);
+      --glass-border:   rgba(255,255,255,0.10);
+      --glass-shadow:   0 8px 32px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.06) inset;
+      --glass-hover:    rgba(255,255,255,0.08);
+
+      --text-primary:   #e8e8f0;
+      --text-secondary: #8888aa;
+      --text-muted:     #44445a;
+
+      --toggle-icon:    "🌙";
+    }
+
+    [data-theme="light"] {
+      --bg-base:        #eef2ff;
+      --orb1:           rgba(139, 92, 246, 0.20);
+      --orb2:           rgba(56, 189, 248, 0.18);
+      --orb3:           rgba(244, 114, 182, 0.15);
+
+      --glass-bg:       rgba(255,255,255,0.70);
+      --glass-border:   rgba(255,255,255,0.90);
+      --glass-shadow:   0 8px 32px rgba(100,80,200,0.12), 0 1px 0 rgba(255,255,255,0.9) inset;
+      --glass-hover:    rgba(255,255,255,0.85);
+
+      --text-primary:   #1e1e3a;
+      --text-secondary: #5555aa;
+      --text-muted:     #aaaacc;
+
+      --toggle-icon:    "☀️";
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+      padding: 28px 32px 40px;
+      transition: background-color var(--transition), color var(--transition);
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before, body::after, .orb3 {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+      transition: background var(--transition);
+    }
+
+    body::before {
+      width: 520px; height: 520px;
+      background: var(--orb1);
+      top: -120px; left: -100px;
+    }
+
+    body::after {
+      width: 420px; height: 420px;
+      background: var(--orb2);
+      bottom: -80px; right: -80px;
+    }
+
+    .orb3 {
+      width: 340px; height: 340px;
+      background: var(--orb3);
+      top: 50%; left: 70%;
+      transform: translateX(-50%);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(15,15,35,0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 28px 0 0 0;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header .subtitle {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--glass-border);
+      border-radius: 50px;
+      padding: 6px 14px;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: all var(--transition);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .theme-toggle:hover {
+      background: var(--glass-hover);
+      color: var(--text-primary);
+    }
+
+    .toggle-track {
+      width: 38px; height: 20px;
+      background: rgba(99,60,255,0.3);
+      border-radius: 99px;
+      position: relative;
+      transition: background var(--transition);
+      flex-shrink: 0;
+    }
+
+    [data-theme="light"] .toggle-track { background: rgba(56,189,248,0.4); }
+
+    .toggle-thumb {
+      width: 14px; height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      position: absolute;
+      top: 3px; left: 3px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      transition: transform var(--transition);
+    }
+
+    [data-theme="light"] .toggle-thumb { transform: translateX(18px); }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 28px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: var(--glass-shadow);
+      transition: all var(--transition);
+    }
+
+    .card:hover {
+      background: var(--glass-hover);
+      transform: translateY(-2px);
+    }
+
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .item {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      border-left: 3px solid transparent;
+    }
+
+    .item.highlight { border-left-color: #a78bfa; }
+    .item.pro { border-left-color: #4ade80; }
+    .item.con { border-left-color: #f87171; }
+
+    .item-icon {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .item-text {
+      flex: 1;
+    }
+
+    .item-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .item-desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .mini-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .mini-card-icon {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    .mini-card-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .mini-card-desc {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+
+    .tag {
+      display: inline-block;
+      background: rgba(167, 139, 250, 0.15);
+      color: #a78bfa;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+
+    .conclusion {
+      background: linear-gradient(135deg, rgba(167,139,250,0.1), rgba(74,222,128,0.1));
+      border: 1px solid rgba(167,139,250,0.2);
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 4px;
+    }
+
+    .conclusion-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .conclusion-text {
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+
+    @media (max-width: 1200px) {
+      .container { grid-template-columns: 1fr; }
+      .section-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      header h1 { font-size: 1.4rem; }
+      .section-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ══════════════════════════════════════════
+       내비게이션 메뉴
+    ══════════════════════════════════════════ */
+    nav {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 28px;
+      position: sticky;
+      top: 60px;
+      z-index: 10;
+      background: rgba(15,15,35,0.3);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 12px 0;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn {
+      padding: 10px 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99,60,255,0.15);
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, rgba(167,139,250,0.3), rgba(74,222,128,0.2));
+      border-color: rgba(167,139,250,0.5);
+      color: #a78bfa;
+      box-shadow: 0 0 20px rgba(167,139,250,0.3);
+    }
+
+    .nav-icon {
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="orb3"></div>
+
+<header>
+  <div>
+    <h1>📋 SubTrackr 사이트 분석 보고서</h1>
+    <div class="subtitle">구독 관리 SaaS 플랫폼 상세 분석 및 평가</div>
+  </div>
+
+  <button class="theme-toggle" id="themeToggle" aria-label="테마 전환">
+    <span id="themeIcon">🌙</span>
+    <div class="toggle-track">
+      <div class="toggle-thumb"></div>
+    </div>
+  </button>
+</header>
+
+<nav>
+  <a href="dashboard.html" class="nav-btn nav-item" data-page="dashboard">
+    <span class="nav-icon">📊</span>
+    <span>대시보드</span>
+  </a>
+  <a href="meeting-result.html" class="nav-btn nav-item" data-page="meeting">
+    <span class="nav-icon">📝</span>
+    <span>회의록</span>
+  </a>
+  <a href="chart.html" class="nav-btn nav-item" data-page="chart">
+    <span class="nav-icon">📈</span>
+    <span>매출 현황</span>
+  </a>
+  <a href="diagram.html" class="nav-btn nav-item" data-page="diagram">
+    <span class="nav-icon">🔄</span>
+    <span>업무 프로세스</span>
+  </a>
+  <a href="report.html" class="nav-btn nav-item" data-page="report">
+    <span class="nav-icon">📋</span>
+    <span>사이트 분석</span>
+  </a>
+</nav>
+
+<div class="container">
+
+  <!-- 사이트 개요 -->
+  <div class="card">
+    <div class="card-title">
+      <span class="dot" style="color:#a78bfa; background:#a78bfa;"></span>
+      사이트 개요
+    </div>
+    <div class="card-content">
+      <div class="item highlight">
+        <div class="item-icon">🎯</div>
+        <div class="item-text">
+          <div class="item-label">서비스명</div>
+          <div class="item-desc">SubTrackr (구독 관리 플랫폼)</div>
+        </div>
+      </div>
+
+      <div class="item highlight">
+        <div class="item-icon">🔒</div>
+        <div class="item-text">
+          <div class="item-label">차별화 요소</div>
+          <div class="item-desc">은행 계정 연동 없이도 구독료 추적 가능 - 보안 중시</div>
+        </div>
+      </div>
+
+      <div class="item highlight">
+        <div class="item-icon">🤖</div>
+        <div class="item-text">
+          <div class="item-label">기술 스택</div>
+          <div class="item-desc">AI 기반 자동 분류 및 추천 기능</div>
+        </div>
+      </div>
+
+      <div class="item highlight">
+        <div class="item-icon">💰</div>
+        <div class="item-text">
+          <div class="item-label">가격 정책</div>
+          <div class="item-desc">무료 서비스 제공 (프리미엄 옵션 가능)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 사이트 구조 -->
+  <div class="card">
+    <div class="card-title">
+      <span class="dot" style="color:#60a5fa; background:#60a5fa;"></span>
+      사이트 구조 분석
+    </div>
+    <div class="card-content">
+      <div class="item">
+        <div class="item-icon">📱</div>
+        <div class="item-text">
+          <div class="item-label">플랫폼</div>
+          <div class="item-desc">웹 기반 + 모바일 앱 지원</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item-icon">🏠</div>
+        <div class="item-text">
+          <div class="item-label">메인 네비게이션</div>
+          <div class="item-desc">대시보드, 구독 목록, 분석, 설정 등 주요 기능별 섹션</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item-icon">📊</div>
+        <div class="item-text">
+          <div class="item-label">핵심 기능</div>
+          <div class="item-desc">구독 추적, 비용 분석, 자동 리마인더, 취소 가이드</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item-icon">👤</div>
+        <div class="item-text">
+          <div class="item-label">사용자 경험</div>
+          <div class="item-desc">로그인, 가입, 대시보드, 개인 설정 페이지</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 주요 기능 -->
+  <div class="card full-width">
+    <div class="card-title">
+      <span class="dot" style="color:#f59e0b; background:#f59e0b;"></span>
+      주요 기능 (핵심 차별화)
+    </div>
+    <div class="section-grid">
+      <div class="mini-card">
+        <div class="mini-card-icon">📱</div>
+        <div class="mini-card-title">구독 자동 추적</div>
+        <div class="mini-card-desc">수동 입력으로 구독료 관리, 은행 연동 불필요</div>
+      </div>
+
+      <div class="mini-card">
+        <div class="mini-card-icon">🤖</div>
+        <div class="mini-card-title">AI 분류 기능</div>
+        <div class="mini-card-desc">구독 서비스 자동 분류 및 카테고리 제안</div>
+      </div>
+
+      <div class="mini-card">
+        <div class="mini-card-icon">💡</div>
+        <div class="mini-card-title">스마트 분석</div>
+        <div class="mini-card-desc">월별/카테고리별 지출 분석 및 절약 제안</div>
+      </div>
+
+      <div class="mini-card">
+        <div class="mini-card-icon">⏰</div>
+        <div class="mini-card-title">자동 리마인더</div>
+        <div class="mini-card-desc">갱신일 알림, 취소 시기 안내</div>
+      </div>
+
+      <div class="mini-card">
+        <div class="mini-card-icon">❌</div>
+        <div class="mini-card-title">취소 가이드</div>
+        <div class="mini-card-desc">각 서비스별 취소 방법 제공</div>
+      </div>
+
+      <div class="mini-card">
+        <div class="mini-card-icon">🎯</div>
+        <div class="mini-card-title">비용 절감 목표</div>
+        <div class="mini-card-desc">월 예산 설정 및 진행률 추적</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 디자인 특징 -->
+  <div class="card">
+    <div class="card-title">
+      <span class="dot" style="color:#4ade80; background:#4ade80;"></span>
+      디자인 분석
+    </div>
+    <div class="card-content">
+      <div class="item">
+        <div class="item-icon">🎨</div>
+        <div class="item-text">
+          <div class="item-label">색상 팔레트</div>
+          <div class="item-desc">모던 블루 + 액센트 그린, 깔끔하고 신뢰감 있는 톤</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item-icon">📐</div>
+        <div class="item-text">
+          <div class="item-label">레이아웃</div>
+          <div class="item-desc">직관적 그리드 구조, 반응형 디자인</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item-icon">✨</div>
+        <div class="item-text">
+          <div class="item-label">시각 계층</div>
+          <div class="item-desc">명확한 우선순위 표시, 가독성 우수</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item-icon">🔤</div>
+        <div class="item-text">
+          <div class="item-label">타이포그래피</div>
+          <div class="item-desc">깔끔한 모던 폰트, 적절한 폰트 크기 계층</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 잘한 점 -->
+  <div class="card">
+    <div class="card-title">
+      <span class="dot" style="color:#4ade80; background:#4ade80;"></span>
+      잘한 점 (강점)
+    </div>
+    <div class="card-content">
+      <div class="item pro">
+        <div class="item-icon">✅</div>
+        <div class="item-text">
+          <div class="item-label">보안 중심 가치제안</div>
+          <div class="item-desc">은행 계정 비연동으로 프라이버시 보호</div>
+        </div>
+      </div>
+
+      <div class="item pro">
+        <div class="item-icon">✅</div>
+        <div class="item-text">
+          <div class="item-label">AI 기술 활용</div>
+          <div class="item-desc">자동 분류, 지능형 추천으로 사용성 향상</div>
+        </div>
+      </div>
+
+      <div class="item pro">
+        <div class="item-icon">✅</div>
+        <div class="item-text">
+          <div class="item-label">직관적 UX</div>
+          <div class="item-desc">사용하기 쉬운 인터페이스, 낮은 학습곡선</div>
+        </div>
+      </div>
+
+      <div class="item pro">
+        <div class="item-icon">✅</div>
+        <div class="item-text">
+          <div class="item-label">무료 제공</div>
+          <div class="item-desc">기본 기능 전부 무료 - 접근성 높음</div>
+        </div>
+      </div>
+
+      <div class="item pro">
+        <div class="item-icon">✅</div>
+        <div class="item-text">
+          <div class="item-label">실용적 기능</div>
+          <div class="item-desc">취소 가이드, 리마인더 등 사용자 관심사 중심</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 개선 제안 -->
+  <div class="card">
+    <div class="card-title">
+      <span class="dot" style="color:#f87171; background:#f87171;"></span>
+      개선 제안 (약점)
+    </div>
+    <div class="card-content">
+      <div class="item con">
+        <div class="item-icon">⚠️</div>
+        <div class="item-text">
+          <div class="item-label">데이터 수동 입력</div>
+          <div class="item-desc">은행 비연동으로 인한 초기 데이터 입력 번거로움</div>
+        </div>
+      </div>
+
+      <div class="item con">
+        <div class="item-icon">⚠️</div>
+        <div class="item-text">
+          <div class="item-label">마케팅 강화</div>
+          <div class="item-desc">서비스 인지도 확대를 위한 마케팅 필요</div>
+        </div>
+      </div>
+
+      <div class="item con">
+        <div class="item-icon">⚠️</div>
+        <div class="item-text">
+          <div class="item-label">소셜 기능</div>
+          <div class="item-desc">친구와의 구독 비교, 공유 기능 추가 고려</div>
+        </div>
+      </div>
+
+      <div class="item con">
+        <div class="item-icon">⚠️</div>
+        <div class="item-text">
+          <div class="item-label">고급 분석</div>
+          <div class="item-desc">트렌드 예측, 예산 최적화 AI 고도화</div>
+        </div>
+      </div>
+
+      <div class="item con">
+        <div class="item-icon">⚠️</div>
+        <div class="item-text">
+          <div class="item-label">통합 기능</div>
+          <div class="item-desc">가계부, 자산관리 앱과의 연동 확대</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 결론 -->
+  <div class="card full-width">
+    <div class="conclusion">
+      <div class="conclusion-title">📊 종합 평가 및 제언</div>
+      <div class="conclusion-text">
+        <strong>SubTrackr는 구독 관리 시장에서 차별화된 가치를 제공하는 서비스입니다.</strong><br><br>
+
+        <strong>핵심 강점:</strong> 보안을 우선시한 설계(은행 미연동), AI 기반 자동 분류 기능, 무료 제공으로 높은 접근성을 확보했습니다. 사용자 입장에서 실제 필요한 기능(취소 가이드, 리마인더)에 집중하여 실용성이 우수합니다.<br><br>
+
+        <strong>개선 기회:</strong> 초기 데이터 입력 부담을 완화하는 자동화 옵션, 더 강력한 AI 분석 기능, 커뮤니티 및 소셜 기능 추가를 통해 사용자 참여도를 높일 수 있습니다.<br><br>
+
+        <strong>제언:</strong> 프리미엄 플랜에서는 고급 분석, 자산 통합 관리, 팀 공유 기능 등을 제공하여 수익화 전략을 강화하고, 콘텐츠 마케팅을 통해 구독 관리의 중요성을 널리 알리는 것이 성장에 효과적할 것으로 예상됩니다.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const html = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  const icon = document.getElementById('themeIcon');
+
+  const SAVED_KEY = 'report-theme';
+
+  function applyTheme(theme) {
+    html.setAttribute('data-theme', theme);
+    icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+    localStorage.setItem(SAVED_KEY, theme);
+  }
+
+  const saved = localStorage.getItem(SAVED_KEY);
+  if (saved) applyTheme(saved);
+
+  btn.addEventListener('click', () => {
+    const current = html.getAttribute('data-theme');
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  // ══════════════════════════════════════════
+  // 현재 페이지 내비게이션 활성화
+  // ══════════════════════════════════════════
+  function activateCurrentNav() {
+    const currentPath = window.location.pathname;
+    const currentFile = currentPath.split('/').pop() || 'dashboard.html';
+
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      const href = item.getAttribute('href');
+      const isActive = currentFile === href ||
+                      (currentFile === '' && href === 'dashboard.html') ||
+                      (currentFile.endsWith('.html') && href.endsWith(currentFile)) ||
+                      (href === 'dashboard.html' && currentFile === 'index.html');
+
+      if (isActive) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+  }
+
+  activateCurrentNav();
+</script>
+
+</body>
+</html>

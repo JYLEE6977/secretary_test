@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>매출 차트 분석</title>
+  <style>
+    :root {
+      --transition: 0.35s cubic-bezier(.4,0,.2,1);
+    }
+
+    [data-theme="dark"] {
+      --bg-base:        #0f0f23;
+      --orb1:           rgba(99,  60, 255, 0.35);
+      --orb2:           rgba(0,  180, 255, 0.25);
+      --orb3:           rgba(74, 222, 128, 0.20);
+
+      --glass-bg:       rgba(255,255,255,0.05);
+      --glass-border:   rgba(255,255,255,0.10);
+      --glass-shadow:   0 8px 32px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.06) inset;
+      --glass-hover:    rgba(255,255,255,0.08);
+
+      --text-primary:   #e8e8f0;
+      --text-secondary: #8888aa;
+      --text-muted:     #44445a;
+
+      --toggle-icon:    "🌙";
+
+      --canvas-bg:      rgba(255,255,255,0.03);
+      --grid-line:      rgba(255,255,255,0.08);
+      --axis-line:      rgba(255,255,255,0.25);
+    }
+
+    [data-theme="light"] {
+      --bg-base:        #eef2ff;
+      --orb1:           rgba(139, 92, 246, 0.20);
+      --orb2:           rgba(74, 222, 128, 0.18);
+      --orb3:           rgba(99,  60, 255, 0.15);
+
+      --glass-bg:       rgba(255,255,255,0.70);
+      --glass-border:   rgba(255,255,255,0.90);
+      --glass-shadow:   0 8px 32px rgba(100,80,200,0.12), 0 1px 0 rgba(255,255,255,0.9) inset;
+      --glass-hover:    rgba(255,255,255,0.85);
+
+      --text-primary:   #1e1e3a;
+      --text-secondary: #5555aa;
+      --text-muted:     #aaaacc;
+
+      --toggle-icon:    "☀️";
+
+      --canvas-bg:      rgba(255,255,255,0.40);
+      --grid-line:      rgba(100,80,200,0.12);
+      --axis-line:      rgba(100,80,200,0.30);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+      padding: 28px 32px;
+      transition: background-color var(--transition), color var(--transition);
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before, body::after, .orb3 {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+      transition: background var(--transition);
+    }
+
+    body::before {
+      width: 520px; height: 520px;
+      background: var(--orb1);
+      top: -120px; left: -100px;
+    }
+
+    body::after {
+      width: 420px; height: 420px;
+      background: var(--orb2);
+      bottom: -80px; right: -80px;
+    }
+
+    .orb3 {
+      width: 340px; height: 340px;
+      background: var(--orb3);
+      top: 30%; left: 70%;
+      transform: translateX(-50%);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(15,15,35,0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 28px 0 0 0;
+    }
+
+    header h1 {
+      font-size: 1.55rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #a78bfa, #4ade80, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header .subtitle {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--glass-border);
+      border-radius: 50px;
+      padding: 6px 14px;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: all var(--transition);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .theme-toggle:hover {
+      background: var(--glass-hover);
+      color: var(--text-primary);
+    }
+
+    .toggle-track {
+      width: 38px; height: 20px;
+      background: rgba(99,60,255,0.3);
+      border-radius: 99px;
+      position: relative;
+      transition: background var(--transition);
+      flex-shrink: 0;
+    }
+
+    [data-theme="light"] .toggle-track { background: rgba(74,222,128,0.4); }
+
+    .toggle-thumb {
+      width: 14px; height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      position: absolute;
+      top: 3px; left: 3px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      transition: transform var(--transition);
+    }
+
+    [data-theme="light"] .toggle-thumb { transform: translateX(18px); }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 28px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: var(--glass-shadow);
+      transition: background var(--transition), box-shadow var(--transition);
+    }
+
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: var(--canvas-bg);
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1.4;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .stat-card.purple { border-left: 3px solid #a78bfa; }
+    .stat-card.green  { border-left: 3px solid #4ade80; }
+    .stat-card.blue   { border-left: 3px solid #60a5fa; }
+
+    @media (max-width: 1200px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    /* ══════════════════════════════════════════
+       내비게이션 메뉴
+    ══════════════════════════════════════════ */
+    nav {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 28px;
+      position: sticky;
+      top: 60px;
+      z-index: 10;
+      background: rgba(15,15,35,0.3);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 12px 0;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn {
+      padding: 10px 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99,60,255,0.15);
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, rgba(167,139,250,0.3), rgba(74,222,128,0.2));
+      border-color: rgba(167,139,250,0.5);
+      color: #a78bfa;
+      box-shadow: 0 0 20px rgba(167,139,250,0.3);
+    }
+
+    .nav-icon {
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="orb3"></div>
+
+<header>
+  <div>
+    <h1>📊 매출 분석 대시보드</h1>
+    <div class="subtitle">2026년 1월~2월 매출 추이 및 제품별 성과</div>
+  </div>
+
+  <button class="theme-toggle" id="themeToggle" aria-label="테마 전환">
+    <span id="themeIcon">🌙</span>
+    <div class="toggle-track">
+      <div class="toggle-thumb"></div>
+    </div>
+  </button>
+</header>
+
+<nav>
+  <a href="dashboard.html" class="nav-btn nav-item" data-page="dashboard">
+    <span class="nav-icon">📊</span>
+    <span>대시보드</span>
+  </a>
+  <a href="meeting-result.html" class="nav-btn nav-item" data-page="meeting">
+    <span class="nav-icon">📝</span>
+    <span>회의록</span>
+  </a>
+  <a href="chart.html" class="nav-btn nav-item" data-page="chart">
+    <span class="nav-icon">📈</span>
+    <span>매출 현황</span>
+  </a>
+  <a href="diagram.html" class="nav-btn nav-item" data-page="diagram">
+    <span class="nav-icon">🔄</span>
+    <span>업무 프로세스</span>
+  </a>
+  <a href="report.html" class="nav-btn nav-item" data-page="report">
+    <span class="nav-icon">📋</span>
+    <span>사이트 분석</span>
+  </a>
+</nav>
+
+<div class="container">
+
+  <!-- 월별 매출 추이 -->
+  <div class="card">
+    <div class="card-title">
+      <span class="dot" style="color:#a78bfa; background:#a78bfa;"></span>
+      월별 매출 추이
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="lineChart"></canvas>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card purple">
+        <div class="stat-label">1월 매출</div>
+        <div class="stat-value" id="stat-jan">46,499,000</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-label">2월 매출</div>
+        <div class="stat-value" id="stat-feb">24,507,000</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 제품별 매출 비교 -->
+  <div class="card">
+    <div class="card-title">
+      <span class="dot" style="color:#4ade80; background:#4ade80;"></span>
+      제품별 매출 비교
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="barChart"></canvas>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card green">
+        <div class="stat-label">최고 상품</div>
+        <div class="stat-value" id="stat-top">무선 이어폰</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">총 판매액</div>
+        <div class="stat-value" id="stat-total">71,006,000</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ══════════════════════════════════════════
+  // 테마 토글
+  // ══════════════════════════════════════════
+  const html = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  const icon = document.getElementById('themeIcon');
+
+  const SAVED_KEY = 'chart-theme';
+
+  function applyTheme(theme) {
+    html.setAttribute('data-theme', theme);
+    icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+    localStorage.setItem(SAVED_KEY, theme);
+    redrawCharts();
+  }
+
+  const saved = localStorage.getItem(SAVED_KEY);
+  if (saved) applyTheme(saved);
+
+  btn.addEventListener('click', () => {
+    const current = html.getAttribute('data-theme');
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  // ══════════════════════════════════════════
+  // 숫자 포맷팅
+  // ══════════════════════════════════════════
+  function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  // ══════════════════════════════════════════
+  // 데이터 (CSV 파싱 결과)
+  // ══════════════════════════════════════════
+  const salesData = [
+    { date: '2026-01-05', product: '무선 이어폰', qty: 45, price: 89000, sales: 4005000 },
+    { date: '2026-01-05', product: '보조배터리', qty: 32, price: 35000, sales: 1120000 },
+    { date: '2026-01-05', product: '텀블러', qty: 78, price: 25000, sales: 1950000 },
+    { date: '2026-01-08', product: '무선 이어폰', qty: 52, price: 89000, sales: 4628000 },
+    { date: '2026-01-08', product: '블루투스 스피커', qty: 18, price: 120000, sales: 2160000 },
+    { date: '2026-01-08', product: '텀블러', qty: 65, price: 25000, sales: 1625000 },
+    { date: '2026-01-12', product: '보조배터리', qty: 41, price: 35000, sales: 1435000 },
+    { date: '2026-01-12', product: '무선 충전기', qty: 29, price: 45000, sales: 1305000 },
+    { date: '2026-01-12', product: '에코백', qty: 93, price: 15000, sales: 1395000 },
+    { date: '2026-01-15', product: '무선 이어폰', qty: 38, price: 89000, sales: 3382000 },
+    { date: '2026-01-15', product: '블루투스 스피커', qty: 22, price: 120000, sales: 2640000 },
+    { date: '2026-01-15', product: '텀블러', qty: 84, price: 25000, sales: 2100000 },
+    { date: '2026-01-19', product: '보조배터리', qty: 55, price: 35000, sales: 1925000 },
+    { date: '2026-01-19', product: '에코백', qty: 110, price: 15000, sales: 1650000 },
+    { date: '2026-01-19', product: '무선 충전기', qty: 33, price: 45000, sales: 1485000 },
+    { date: '2026-01-22', product: '무선 이어폰', qty: 61, price: 89000, sales: 5429000 },
+    { date: '2026-01-22', product: '텀블러', qty: 72, price: 25000, sales: 1800000 },
+    { date: '2026-01-22', product: '블루투스 스피커', qty: 15, price: 120000, sales: 1800000 },
+    { date: '2026-01-26', product: '보조배터리', qty: 48, price: 35000, sales: 1680000 },
+    { date: '2026-01-26', product: '에코백', qty: 88, price: 15000, sales: 1320000 },
+    { date: '2026-01-26', product: '무선 충전기', qty: 37, price: 45000, sales: 1665000 },
+    { date: '2026-02-01', product: '무선 이어폰', qty: 70, price: 89000, sales: 6230000 },
+    { date: '2026-02-01', product: '텀블러', qty: 95, price: 25000, sales: 2375000 },
+    { date: '2026-02-01', product: '보조배터리', qty: 43, price: 35000, sales: 1505000 },
+    { date: '2026-02-05', product: '블루투스 스피커', qty: 25, price: 120000, sales: 3000000 },
+    { date: '2026-02-05', product: '에코백', qty: 120, price: 15000, sales: 1800000 },
+    { date: '2026-02-05', product: '무선 충전기', qty: 31, price: 45000, sales: 1395000 },
+    { date: '2026-02-10', product: '무선 이어폰', qty: 58, price: 89000, sales: 5162000 },
+    { date: '2026-02-10', product: '텀블러', qty: 67, price: 25000, sales: 1675000 },
+    { date: '2026-02-10', product: '보조배터리', qty: 39, price: 35000, sales: 1365000 },
+  ];
+
+  // ══════════════════════════════════════════
+  // 월별 매출 계산
+  // ══════════════════════════════════════════
+  function getMonthlyData() {
+    const monthlyMap = {};
+
+    salesData.forEach(row => {
+      const month = row.date.substring(0, 7);
+      if (!monthlyMap[month]) monthlyMap[month] = 0;
+      monthlyMap[month] += row.sales;
+    });
+
+    return Object.entries(monthlyMap)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([month, sales]) => ({
+        label: month === '2026-01' ? '1월' : '2월',
+        sales: sales
+      }));
+  }
+
+  // ══════════════════════════════════════════
+  // 제품별 매출 계산
+  // ══════════════════════════════════════════
+  function getProductData() {
+    const productMap = {};
+
+    salesData.forEach(row => {
+      if (!productMap[row.product]) productMap[row.product] = 0;
+      productMap[row.product] += row.sales;
+    });
+
+    return Object.entries(productMap)
+      .map(([name, sales]) => ({ name, sales }))
+      .sort((a, b) => b.sales - a.sales);
+  }
+
+  // ══════════════════════════════════════════
+  // 선 그래프 그리기 (월별 매출)
+  // ══════════════════════════════════════════
+  function drawLineChart() {
+    const canvas = document.getElementById('lineChart');
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+
+    canvas.width = rect.width * window.devicePixelRatio;
+    canvas.height = rect.height * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+    const w = rect.width;
+    const h = rect.height;
+    const padding = 50;
+    const graphW = w - padding * 2;
+    const graphH = h - padding * 2;
+
+    // 배경
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.40)';
+    ctx.fillRect(0, 0, w, h);
+
+    // 그리드
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(100,80,200,0.12)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = padding + (graphH / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(w - padding, y);
+      ctx.stroke();
+    }
+
+    const data = getMonthlyData();
+    const maxSales = Math.max(...data.map(d => d.sales));
+
+    // 축
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(100,80,200,0.30)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, h - padding);
+    ctx.lineTo(w - padding, h - padding);
+    ctx.stroke();
+
+    // 라벨
+    ctx.fillStyle = isDark ? '#8888aa' : '#5555aa';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+
+    // Y축 라벨
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) {
+      const val = (maxSales / 4) * i;
+      const y = h - padding - (graphH / 4) * i;
+      ctx.fillText(formatNumber(Math.floor(val / 1000000)) + 'M', padding - 10, y);
+    }
+
+    // X축 라벨 및 데이터 포인트
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const pointSpacing = graphW / (data.length - 1);
+
+    // 선 그리기
+    ctx.strokeStyle = '#a78bfa';
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+
+    data.forEach((d, i) => {
+      const x = padding + pointSpacing * i;
+      const y = h - padding - (d.sales / maxSales) * graphH;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // 포인트 및 라벨
+    data.forEach((d, i) => {
+      const x = padding + pointSpacing * i;
+      const y = h - padding - (d.sales / maxSales) * graphH;
+
+      // 포인트
+      ctx.fillStyle = '#a78bfa';
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 데이터 라벨 (위에)
+      ctx.fillStyle = isDark ? '#e8e8f0' : '#1e1e3a';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillText(formatNumber(d.sales), x, y - 15);
+
+      // 월 라벨
+      ctx.fillStyle = isDark ? '#8888aa' : '#5555aa';
+      ctx.font = '12px sans-serif';
+      ctx.fillText(d.label, x, h - padding + 15);
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // 막대 그래프 그리기 (제품별 매출)
+  // ══════════════════════════════════════════
+  function drawBarChart() {
+    const canvas = document.getElementById('barChart');
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+
+    canvas.width = rect.width * window.devicePixelRatio;
+    canvas.height = rect.height * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+    const w = rect.width;
+    const h = rect.height;
+    const padding = 50;
+    const graphW = w - padding * 2;
+    const graphH = h - padding * 2;
+
+    // 배경
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.40)';
+    ctx.fillRect(0, 0, w, h);
+
+    // 그리드
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(100,80,200,0.12)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = padding + (graphH / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(w - padding, y);
+      ctx.stroke();
+    }
+
+    const data = getProductData();
+    const maxSales = Math.max(...data.map(d => d.sales));
+
+    // 축
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(100,80,200,0.30)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, h - padding);
+    ctx.lineTo(w - padding, h - padding);
+    ctx.stroke();
+
+    // 라벨
+    ctx.fillStyle = isDark ? '#8888aa' : '#5555aa';
+    ctx.font = '12px sans-serif';
+
+    // Y축 라벨
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) {
+      const val = (maxSales / 4) * i;
+      const y = h - padding - (graphH / 4) * i;
+      ctx.fillText(formatNumber(Math.floor(val / 1000000)) + 'M', padding - 10, y);
+    }
+
+    // 색상 팔레트
+    const colors = [
+      '#a78bfa', '#4ade80', '#60a5fa', '#f59e0b', '#ec4899', '#8b5cf6'
+    ];
+
+    // 막대 그리기
+    const barSpacing = graphW / data.length;
+    const barWidth = barSpacing * 0.6;
+
+    data.forEach((d, i) => {
+      const x = padding + i * barSpacing + (barSpacing - barWidth) / 2;
+      const barHeight = (d.sales / maxSales) * graphH;
+      const y = h - padding - barHeight;
+
+      // 막대
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.fillRect(x, y, barWidth, barHeight);
+
+      // 데이터 라벨 (위에)
+      ctx.fillStyle = isDark ? '#e8e8f0' : '#1e1e3a';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(formatNumber(d.sales), x + barWidth / 2, y - 8);
+
+      // 제품명
+      ctx.fillStyle = isDark ? '#8888aa' : '#5555aa';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const productLabel = d.name.length > 6 ? d.name.substring(0, 6) : d.name;
+      ctx.fillText(productLabel, x + barWidth / 2, h - padding + 10);
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // 통계 업데이트
+  // ══════════════════════════════════════════
+  function updateStats() {
+    const monthlyData = getMonthlyData();
+    const productData = getProductData();
+
+    document.getElementById('stat-jan').textContent = formatNumber(monthlyData[0].sales);
+    document.getElementById('stat-feb').textContent = formatNumber(monthlyData[1].sales);
+    document.getElementById('stat-top').textContent = productData[0].name;
+
+    const total = salesData.reduce((sum, d) => sum + d.sales, 0);
+    document.getElementById('stat-total').textContent = formatNumber(total);
+  }
+
+  // ══════════════════════════════════════════
+  // 초기화
+  // ══════════════════════════════════════════
+  function redrawCharts() {
+    drawLineChart();
+    drawBarChart();
+  }
+
+  window.addEventListener('resize', redrawCharts);
+  updateStats();
+  redrawCharts();
+
+  // ══════════════════════════════════════════
+  // 현재 페이지 내비게이션 활성화
+  // ══════════════════════════════════════════
+  function activateCurrentNav() {
+    const currentPath = window.location.pathname;
+    const currentFile = currentPath.split('/').pop() || 'dashboard.html';
+
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      const href = item.getAttribute('href');
+      const isActive = currentFile === href ||
+                      (currentFile === '' && href === 'dashboard.html') ||
+                      (currentFile.endsWith('.html') && href.endsWith(currentFile)) ||
+                      (href === 'dashboard.html' && currentFile === 'index.html');
+
+      if (isActive) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+  }
+
+  activateCurrentNav();
+</script>
+
+</body>
+</html>

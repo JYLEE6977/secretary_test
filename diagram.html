@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>업무 프로세스</title>
+  <style>
+    :root {
+      --transition: 0.35s cubic-bezier(.4,0,.2,1);
+    }
+
+    [data-theme="dark"] {
+      --bg-base:        #0f0f23;
+      --orb1:           rgba(99,  60, 255, 0.35);
+      --orb2:           rgba(0,  180, 255, 0.25);
+      --orb3:           rgba(244, 114, 182, 0.20);
+
+      --glass-bg:       rgba(255,255,255,0.05);
+      --glass-border:   rgba(255,255,255,0.10);
+      --glass-shadow:   0 8px 32px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.06) inset;
+      --glass-hover:    rgba(255,255,255,0.08);
+
+      --text-primary:   #e8e8f0;
+      --text-secondary: #8888aa;
+
+      --toggle-icon:    "🌙";
+    }
+
+    [data-theme="light"] {
+      --bg-base:        #eef2ff;
+      --orb1:           rgba(139, 92, 246, 0.20);
+      --orb2:           rgba(56, 189, 248, 0.18);
+      --orb3:           rgba(244, 114, 182, 0.15);
+
+      --glass-bg:       rgba(255,255,255,0.70);
+      --glass-border:   rgba(255,255,255,0.90);
+      --glass-shadow:   0 8px 32px rgba(100,80,200,0.12), 0 1px 0 rgba(255,255,255,0.9) inset;
+      --glass-hover:    rgba(255,255,255,0.85);
+
+      --text-primary:   #1e1e3a;
+      --text-secondary: #5555aa;
+
+      --toggle-icon:    "☀️";
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+      padding: 28px 32px 40px;
+      transition: background-color var(--transition), color var(--transition);
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before, body::after, .orb3 {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+      transition: background var(--transition);
+    }
+
+    body::before {
+      width: 520px; height: 520px;
+      background: var(--orb1);
+      top: -120px; left: -100px;
+    }
+
+    body::after {
+      width: 420px; height: 420px;
+      background: var(--orb2);
+      bottom: -80px; right: -80px;
+    }
+
+    .orb3 {
+      width: 340px; height: 340px;
+      background: var(--orb3);
+      top: 50%; left: 70%;
+      transform: translateX(-50%);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(15,15,35,0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 28px 0 0 0;
+    }
+
+    header h1 {
+      font-size: 1.55rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header .subtitle {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 3px;
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--glass-border);
+      border-radius: 50px;
+      padding: 6px 14px;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: all var(--transition);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .theme-toggle:hover {
+      background: var(--glass-hover);
+      color: var(--text-primary);
+    }
+
+    .toggle-track {
+      width: 38px; height: 20px;
+      background: rgba(99,60,255,0.3);
+      border-radius: 99px;
+      position: relative;
+      transition: background var(--transition);
+      flex-shrink: 0;
+    }
+
+    [data-theme="light"] .toggle-track { background: rgba(56,189,248,0.4); }
+
+    .toggle-thumb {
+      width: 14px; height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      position: absolute;
+      top: 3px; left: 3px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      transition: transform var(--transition);
+    }
+
+    [data-theme="light"] .toggle-thumb { transform: translateX(18px); }
+
+    nav {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 28px;
+      position: sticky;
+      top: 60px;
+      z-index: 10;
+      background: rgba(15,15,35,0.3);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 12px 0;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn {
+      padding: 10px 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99,60,255,0.15);
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, rgba(167,139,250,0.3), rgba(74,222,128,0.2));
+      border-color: rgba(167,139,250,0.5);
+      color: #a78bfa;
+      box-shadow: 0 0 20px rgba(167,139,250,0.3);
+    }
+
+    .nav-icon {
+      font-size: 1rem;
+    }
+
+    .card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 28px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: var(--glass-shadow);
+      transition: all var(--transition);
+      position: relative;
+      z-index: 1;
+    }
+
+    .card:hover {
+      background: var(--glass-hover);
+      transform: translateY(-2px);
+    }
+
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .diagram-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    svg {
+      max-width: 100%;
+      height: auto;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
+    }
+  </style>
+</head>
+<body>
+
+<div class="orb3"></div>
+
+<header>
+  <div>
+    <h1>🔄 업무 프로세스</h1>
+    <div class="subtitle">마케팅 프로젝트 5단계 워크플로우</div>
+  </div>
+
+  <button class="theme-toggle" id="themeToggle" aria-label="테마 전환">
+    <span id="themeIcon">🌙</span>
+    <div class="toggle-track">
+      <div class="toggle-thumb"></div>
+    </div>
+  </button>
+</header>
+
+<nav>
+  <a href="dashboard.html" class="nav-btn nav-item" data-page="dashboard">
+    <span class="nav-icon">📊</span>
+    <span>대시보드</span>
+  </a>
+  <a href="meeting-result.html" class="nav-btn nav-item" data-page="meeting">
+    <span class="nav-icon">📝</span>
+    <span>회의록</span>
+  </a>
+  <a href="chart.html" class="nav-btn nav-item" data-page="chart">
+    <span class="nav-icon">📈</span>
+    <span>매출 현황</span>
+  </a>
+  <a href="diagram.html" class="nav-btn nav-item" data-page="diagram">
+    <span class="nav-icon">🔄</span>
+    <span>업무 프로세스</span>
+  </a>
+  <a href="report.html" class="nav-btn nav-item" data-page="report">
+    <span class="nav-icon">📋</span>
+    <span>사이트 분석</span>
+  </a>
+</nav>
+
+<div class="card">
+  <div class="card-title">
+    <span class="dot" style="color:#f59e0b; background:#f59e0b;"></span>
+    마케팅 프로젝트 워크플로우
+  </div>
+  <div class="diagram-container">
+    <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" width="800" height="200">
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <polygon points="0 0, 10 3, 0 6" fill="#6b7280"/>
+        </marker>
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="4" stdDeviation="3" flood-opacity="0.2"/>
+        </filter>
+        <style>
+          .stage-box {
+            transition: all 0.3s ease;
+            cursor: pointer;
+          }
+          .stage-box:hover {
+            filter: brightness(1.1) drop-shadow(0 6px 12px rgba(0,0,0,0.3));
+            transform: translateY(-3px);
+          }
+          .stage-text {
+            font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+            font-weight: 700;
+            text-anchor: middle;
+            dominant-baseline: middle;
+          }
+          .stage-label {
+            font-size: 13px;
+            fill: white;
+          }
+          .arrow-line {
+            stroke: #d1d5db;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+          }
+        </style>
+      </defs>
+
+      <rect width="800" height="200" fill="none"/>
+
+      <line x1="140" y1="100" x2="200" y2="100" class="arrow-line" marker-end="url(#arrowhead)"/>
+      <line x1="340" y1="100" x2="400" y2="100" class="arrow-line" marker-end="url(#arrowhead)"/>
+      <line x1="540" y1="100" x2="600" y2="100" class="arrow-line" marker-end="url(#arrowhead)"/>
+      <line x1="740" y1="100" x2="800" y2="100" class="arrow-line" marker-end="url(#arrowhead)"/>
+
+      <g filter="url(#shadow)">
+        <rect x="20" y="50" width="120" height="100" rx="12" ry="12" fill="#a78bfa" class="stage-box"/>
+        <text x="80" y="100" class="stage-text stage-label">기획</text>
+        <text x="80" y="120" style="font-size: 11px; fill: rgba(255,255,255,0.8); text-anchor: middle;">Planning</text>
+      </g>
+
+      <g filter="url(#shadow)">
+        <rect x="220" y="50" width="120" height="100" rx="12" ry="12" fill="#60a5fa" class="stage-box"/>
+        <text x="280" y="100" class="stage-text stage-label">제작</text>
+        <text x="280" y="120" style="font-size: 11px; fill: rgba(255,255,255,0.8); text-anchor: middle;">Production</text>
+      </g>
+
+      <g filter="url(#shadow)">
+        <rect x="420" y="50" width="120" height="100" rx="12" ry="12" fill="#f59e0b" class="stage-box"/>
+        <text x="480" y="100" class="stage-text stage-label">검토</text>
+        <text x="480" y="120" style="font-size: 11px; fill: rgba(255,255,255,0.8); text-anchor: middle;">Review</text>
+      </g>
+
+      <g filter="url(#shadow)">
+        <rect x="620" y="50" width="120" height="100" rx="12" ry="12" fill="#4ade80" class="stage-box"/>
+        <text x="680" y="100" class="stage-text stage-label">배포</text>
+        <text x="680" y="120" style="font-size: 11px; fill: rgba(255,255,255,0.8); text-anchor: middle;">Deploy</text>
+      </g>
+
+      <circle cx="50" cy="35" r="14" fill="#a78bfa" opacity="0.3"/>
+      <text x="50" y="40" style="font-size: 12px; font-weight: 700; fill: #a78bfa; text-anchor: middle;">01</text>
+
+      <circle cx="250" cy="35" r="14" fill="#60a5fa" opacity="0.3"/>
+      <text x="250" y="40" style="font-size: 12px; font-weight: 700; fill: #60a5fa; text-anchor: middle;">02</text>
+
+      <circle cx="450" cy="35" r="14" fill="#f59e0b" opacity="0.3"/>
+      <text x="450" y="40" style="font-size: 12px; font-weight: 700; fill: #f59e0b; text-anchor: middle;">03</text>
+
+      <circle cx="650" cy="35" r="14" fill="#4ade80" opacity="0.3"/>
+      <text x="650" y="40" style="font-size: 12px; font-weight: 700; fill: #4ade80; text-anchor: middle;">04</text>
+    </svg>
+  </div>
+</div>
+
+<script>
+  const html = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  const icon = document.getElementById('themeIcon');
+
+  const SAVED_KEY = 'diagram-theme';
+
+  function applyTheme(theme) {
+    html.setAttribute('data-theme', theme);
+    icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+    localStorage.setItem(SAVED_KEY, theme);
+  }
+
+  const saved = localStorage.getItem(SAVED_KEY);
+  if (saved) applyTheme(saved);
+
+  btn.addEventListener('click', () => {
+    const current = html.getAttribute('data-theme');
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  // ══════════════════════════════════════════
+  // 현재 페이지 내비게이션 활성화
+  // ══════════════════════════════════════════
+  function activateCurrentNav() {
+    const currentPath = window.location.pathname;
+    const currentFile = currentPath.split('/').pop() || 'dashboard.html';
+
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      const href = item.getAttribute('href');
+      const isActive = currentFile === href ||
+                      (currentFile === '' && href === 'dashboard.html') ||
+                      (currentFile.endsWith('.html') && href.endsWith(currentFile)) ||
+                      (href === 'dashboard.html' && currentFile === 'index.html');
+
+      if (isActive) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+  }
+
+  activateCurrentNav();
+</script>
+
+</body>
+</html>
